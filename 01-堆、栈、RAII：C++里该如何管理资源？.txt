@@ -6,9 +6,102 @@
 
 RAII，Resource Acquisition Is Initialization，是C++特有
 的资源管理方式，RAII依托栈和析构函数，来对所有的资源（包括内存）
-进行管理
+进行管理，对 RAII 的使用，使得 C++ 不需要垃圾收集方法，
+也能有效地对内存进行管理。
 
 auto ptr = new std::vector<int>();
 每个new出来的对象都应该用delete释放，但经常容易由于各种原因
 无法执行delete，不符合C++惯用法
+
+栈：
+#include <stdio.h>
+class Obj {
+public:
+  Obj() { puts("Obj()"); }
+  ~Obj() { puts("~Obj()"); }
+};
+void foo(int n)
+{
+  Obj obj;
+  if (n == 42)
+    throw "life, the universe and everything";
+}
+int main()
+{
+  try {
+    foo(41);
+    foo(42);
+  }
+  catch (const char* s) {
+    puts(s);
+  }
+}
+代码结果
+Obj()
+~Obj()
+Obj()
+~Obj()
+life, the universe and everything
+不管是否发生异常，析构函数都会执行
+
+RAII
+C++支持对象存储在栈上，但很多情况下，对象不能或不应该存储在栈上
+例如
+1、对象很大
+2、对象大小在编译时不能确定
+3、对象是函数的返回值，但由于特殊的原因，不应使用对象的值返回
+常见的情况之一：工厂方法或其他面向对象的编程情况下，返回值类型是基类
+在析构甘薯里做必要的清理工作，这就是RAII的基本用法
+这种情况清理并不限于释放内存，也可以是：
+1、关闭文件(fstream的析构就会这么做)
+2、释放同步锁
+3、释放其他重要的系统资源
+例如
+std::mutex mtx;
+void some_func()
+{
+	std::lock_guard<std::mutex> guard(mtx);
+	//做需要同步的工作
+}
+
+
+
+
+new一个对象：
+{
+	void* temp = operator new(sizeof(circle));
+	try{
+		circle* ptr = sr=tatic_cast<circle*>(temp);
+		ptr->circle(..);
+		return ptr;
+	}
+	catch(..){
+		operator delete(ptr);
+		throw;
+	}
+}
+delete一个指针
+if(ptr!=nullptr){
+	ptr->~shape();
+	operator delete(ptr);
+}
+new时先分配内存(失败时整个操作失败并向外抛出异常，通常是bad_alloc)
+然后在这个结果指针上构造对象；构造成功则new操作整体完成，否则
+释放刚分配的内存并继续向外抛出构造函数产生的异常。delete时
+则判断指针是否为空，在指针不为空时调用析构函数并释放之前分配的内存
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
